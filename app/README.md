@@ -13,7 +13,7 @@ characters in the name, or an empty product name, fail closed.
 
 ## What the app shows
 
-Four tabs, all in Japanese UI labels, all content shown as it is in the
+Five tabs, all in Japanese UI labels, all content shown as it is in the
 sources:
 
 - 概要: every field of the repository's `blueprint.edn`.
@@ -21,6 +21,10 @@ sources:
   when the repository has one. The tab says it is a sample, not live data.
 - 物理仕様: the `physics.edn` cases, shown only when the repository has
   `physics.edn`.
+- 原稿: the `docs/manuscripts/p1.edn` entries bundled when the repository
+  has that file; otherwise the tab reports 未登録. Read-only: no save
+  button and no editing fields. Writes stay out until a schema v2 and a
+  consent gate exist.
 - この app について: id, version, source digests, and the statement that
   the app performs no external communication.
 

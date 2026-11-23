@@ -23,6 +23,13 @@ test("build pins identity, sources and output files", async () => {
     assert.ok(hex.test(digest), `${name} digest is pinned`);
   }
   assert.deepEqual(data.descriptor.operations, []);
+  assert.equal(data.descriptor["local-state"].schema, "itonami.series.isco2641.v1",
+    "the localStorage schema stays v1 until schema v2 plus a consent gate arrive");
+  assert.equal(data.descriptor["local-state"].version, 1);
+  assert.equal(data.manuscript, null, "no manuscript file in the repository bundle yet");
+  const sourcePaths = Object.keys(release.sources).sort();
+  assert.deepEqual(sourcePaths, ["blueprint.edn", "docs/samples/operator-console.html", "physics.edn"],
+    "the pinned source set is unchanged (the absent manuscript file adds none)");
   assert.deepEqual(
     clientRuntimeProblems(data.descriptor, [], "tauri://localhost"),
     [],
