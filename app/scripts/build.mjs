@@ -64,6 +64,16 @@ export async function build(appRoot = fileURLToPath(new URL("../", import.meta.u
     if (forms.length !== 1 || !Array.isArray(forms[0]?.cases)) throw new Error("physics.edn must hold one map with :cases");
     physics = forms[0];
   }
+  // P1 manuscript: an optional repository file, pinned like the other
+  // sources when present. Absent file means null data, and the tab reports
+  // 未登録 instead of a fabricated manuscript.
+  const manuscriptText = await source("docs/manuscripts/p1.edn");
+  let manuscript = null;
+  if (manuscriptText !== null) {
+    const forms = readAll(manuscriptText);
+    if (forms.length !== 1 || !Array.isArray(forms[0]?.entries)) throw new Error("docs/manuscripts/p1.edn must hold one map with :entries");
+    manuscript = forms[0];
+  }
   const consoleText = await source("docs/samples/operator-console.html");
   const operatorConsole = consoleText === null ? null : extractConsole(consoleText);
   if (consoleText !== null && operatorConsole === null) delete sources["docs/samples/operator-console.html"];
@@ -80,7 +90,7 @@ export async function build(appRoot = fileURLToPath(new URL("../", import.meta.u
   await writeFile(join(out, "index.html"), index);
   for (const name of ["style.css", "app.js", "view.js"]) await copyFile(resolve(appRoot, "src", name), join(out, name));
   await copyFile(resolve(appRoot, "vendor/kotoba-client-runtime.js"), join(out, "vendor/kotoba-client-runtime.js"));
-  const data = { identity, version: meta.version, blueprint, physics, console: operatorConsole, sources, descriptor };
+  const data = { identity, version: meta.version, blueprint, physics, manuscript, console: operatorConsole, sources, descriptor };
   await writeFile(join(out, "data.js"), `export default ${JSON.stringify(data, null, 1)};\n`);
   await writeFile(join(out, "descriptor.json"), JSON.stringify(descriptor, null, 2) + "\n");
 

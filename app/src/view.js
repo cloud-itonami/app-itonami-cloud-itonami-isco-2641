@@ -9,6 +9,7 @@
 export const TAB_OVERVIEW = "overview";
 export const TAB_CONSOLE = "console";
 export const TAB_PHYSICS = "physics";
+export const TAB_MANUSCRIPT = "manuscript";
 export const TAB_ABOUT = "about";
 
 /** The tabs for one built data object, in display order. */
@@ -16,6 +17,9 @@ export function tabsFor(data) {
   const tabs = [{ id: TAB_OVERVIEW, label: "概要" }];
   if (data && data.console) tabs.push({ id: TAB_CONSOLE, label: "操作卓の見本" });
   if (data && data.physics) tabs.push({ id: TAB_PHYSICS, label: "物理仕様" });
+  // The manuscript tab is always present: with no manuscript bundled, it
+  // reports that honestly instead of hiding the screen.
+  tabs.push({ id: TAB_MANUSCRIPT, label: "原稿" });
   tabs.push({ id: TAB_ABOUT, label: "この app について" });
   return tabs;
 }
@@ -24,6 +28,7 @@ export function tabsFor(data) {
 export function panelTree(data, tabId) {
   if (tabId === TAB_CONSOLE && data.console) return consoleTree(data.console);
   if (tabId === TAB_PHYSICS && data.physics) return physicsTree(data);
+  if (tabId === TAB_MANUSCRIPT) return manuscriptTree(data);
   if (tabId === TAB_ABOUT) return aboutTree(data);
   return overviewTree(data);
 }
@@ -96,6 +101,30 @@ function physicsTree(data) {
       node("dl", {}, rows),
     ]));
   }
+  return node("div", {}, parts);
+}
+
+// P1 原稿, read-only: entries bundled at build time from
+// docs/manuscripts/p1.edn are shown as data; when the repository carries no
+// manuscript file the tab says so instead of showing fabricated content.
+// There is no write or save path here, and none is added until the
+// localStorage schema v2 and a consent gate exist.
+function manuscriptTree(data) {
+  const parts = [node("h2", {}, [text("原稿")])];
+  const entries = data.manuscript?.entries;
+  if (Array.isArray(entries) && entries.length > 0) {
+    for (const entry of entries) {
+      const rows = Object.entries(entry).map(([key, value]) =>
+        [keyNode(key), node("dd", {}, [valueNode(value)])]).flat();
+      parts.push(node("section", {}, [
+        node("h3", {}, [text(String(entry.id ?? entry.title ?? entry.name ?? "原稿"))]),
+        node("dl", {}, rows),
+      ]));
+    }
+  } else {
+    parts.push(node("p", { class: "sample-note" }, [text("原稿は未登録です。この app にバンドルされたリポジトリデータには原稿が含まれていません。")]));
+  }
+  parts.push(node("p", { class: "muted" }, [text("この画面は読み取り専用です。書き込み・保存は行いません。書き込み・保存を足す場合は、localStorage の schema 追加（itonami.series.isco2641.v1 → v2）と同意ゲートが別途必要であり、schema v2 と同意ゲートが揃うまで実装しません。")]));
   return node("div", {}, parts);
 }
 

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import {
   TAB_ABOUT,
   TAB_CONSOLE,
+  TAB_MANUSCRIPT,
   TAB_OVERVIEW,
   TAB_PHYSICS,
   errorTree,
@@ -73,14 +74,14 @@ function fakeDoc() {
 }
 
 test("tabs follow the data that exists", () => {
-  assert.deepEqual(tabsFor(data()).map((t) => t.id), [TAB_OVERVIEW, TAB_ABOUT]);
+  assert.deepEqual(tabsFor(data()).map((t) => t.id), [TAB_OVERVIEW, TAB_MANUSCRIPT, TAB_ABOUT]);
   assert.deepEqual(
     tabsFor(data({ console: { title: "", badge: "", sections: [] }, physics: { cases: [] } })).map((t) => t.id),
-    [TAB_OVERVIEW, TAB_CONSOLE, TAB_PHYSICS, TAB_ABOUT],
+    [TAB_OVERVIEW, TAB_CONSOLE, TAB_PHYSICS, TAB_MANUSCRIPT, TAB_ABOUT],
   );
   assert.deepEqual(
     tabsFor(data()).map((t) => t.label),
-    ["概要", "この app について"],
+    ["概要", "原稿", "この app について"],
   );
 });
 
@@ -97,6 +98,27 @@ test("panels head with their tab label and stay faithful", () => {
   assert.ok(about.includes("network.itonami.isco2423"));
   assert.ok(about.includes("外部通信"));
   assert.ok(texts(panelTree(data(), "unknown-id")).includes("概要"), "unknown tabs fall back to the overview");
+});
+
+test("the manuscript tab is read-only and honest about missing data", () => {
+  const tagsOf = (tree) => {
+    const tags = [];
+    const walk = (n) => { if (n.tag) tags.push(n.tag); for (const c of n.children || []) walk(c); };
+    walk(tree);
+    return tags;
+  };
+  const empty = texts(panelTree(data(), TAB_MANUSCRIPT));
+  assert.ok(empty.includes("原稿"));
+  assert.ok(empty.includes("未登録"), "no bundled manuscript means an honest 未登録");
+  assert.ok(empty.includes("読み取り専用"), "the tab says it is read-only");
+  assert.ok(empty.includes("schema"), "the tab says writes wait for schema v2 and a consent gate");
+  for (const tag of ["button", "input", "textarea", "select", "form", "a"]) {
+    assert.ok(!tagsOf(panelTree(data(), TAB_MANUSCRIPT)).includes(tag), `no ${tag} on the read-only tab`);
+  }
+  const stocked = texts(panelTree(data({ manuscript: { entries: [{ id: "ep-1", title: "第一話", status: "draft" }] } }), TAB_MANUSCRIPT));
+  assert.ok(stocked.includes("第一話"), "bundled entries render as they are");
+  assert.ok(!stocked.includes("未登録"), "a stocked manuscript is not reported as empty");
+  assert.ok(!tagsOf(panelTree(data({ manuscript: { entries: [] } }), TAB_MANUSCRIPT)).includes("input"));
 });
 
 test("values render as they are in the sources", () => {
